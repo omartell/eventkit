@@ -1,18 +1,18 @@
 module AsyncIO
   class EventLoop
     def initialize
-      @reading = []
+      @reading = {}
     end
 
     def tick
-      ready_read, _, _ = IO.select(@reading)
+      ready_read, _, _ = IO.select(@reading.keys)
       ready_read.each do |io|
-        io.connection_read_ready
+        io.send(@reading[io])
       end
     end
 
     def register_read(io, read_listener)
-      @reading << io
+      @reading[io] = read_listener
     end
   end
 end
