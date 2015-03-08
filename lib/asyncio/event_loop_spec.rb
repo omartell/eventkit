@@ -46,7 +46,7 @@ module AsyncIO
       another_tcp_server.close
     end
 
-    it 'allows an object to listen on multiple io objects' do
+    it 'allows a single object to register reads on multiple io objects' do
       tcp_server = TCPServer.new('localhost', 9595)
       another_tcp_server = TCPServer.new('localhost', 9494)
 
@@ -66,6 +66,25 @@ module AsyncIO
 
       tcp_server.close
       another_tcp_server.close
+    end
+
+    it 'allows to register multiple read handlers on a single io object' do
+      tcp_server = TCPServer.new('localhost', 9595)
+
+      manager = double(connection_read_ready: nil)
+      another_manager = double(new_connection: nil)
+
+      event_loop.register_read(tcp_server, &manager.method(:connection_read_ready))
+      event_loop.register_read(tcp_server, &another_manager.method(:new_connection))
+
+      TCPSocket.new('localhost', 9595)
+
+      expect(manager).to receive(:connection_read_ready).once.with(tcp_server)
+      expect(another_manager).to receive(:new_connection).once.with(tcp_server)
+
+      event_loop.tick
+
+      tcp_server.close
     end
   end
 end
