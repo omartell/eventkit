@@ -5,13 +5,13 @@ module AsyncIO
     end
 
     def tick
-      ready_read, _, _ = IO.select(@reading.keys)
-      ready_read.each do |io|
-        io.send(@reading[io])
+      ready_read, _, _ = IO.select(@reading.keys, [], [], 1)
+      (ready_read || []).each do |io|
+        @reading[io].call(io)
       end
     end
 
-    def register_read(io, read_listener)
+    def register_read(io, &read_listener)
       @reading[io] = read_listener
     end
   end
