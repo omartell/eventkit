@@ -9,8 +9,20 @@ module AsyncIO
       EventLoop.new
     end
 
+    let(:tcp_server) do
+      TCPServer.new('localhost', 9595)
+    end
+
+    let(:another_tcp_server) do
+      TCPServer.new('localhost', 9494)
+    end
+
+    after do
+      tcp_server.close
+      another_tcp_server.close
+    end
+
     it 'notifies when a single read operation is ready' do
-      tcp_server = TCPServer.new('localhost', 9595)
       fake_server = double(to_io: tcp_server, connection_read_ready: nil)
 
       event_loop.register_read(fake_server, &fake_server.method(:connection_read_ready))
@@ -19,15 +31,10 @@ module AsyncIO
 
       event_loop.tick
 
-      expect(fake_server).to have_received(:connection_read_ready).at_least(:once)
-
-      tcp_server.close
+      expect(fake_server).to have_received(:connection_read_ready).once.with(fake_server)
     end
 
     it 'notifies when multiple read operations are ready' do
-      tcp_server = TCPServer.new('localhost', 9595)
-      another_tcp_server = TCPServer.new('localhost', 9494)
-
       fake_server = double(to_io: tcp_server, connection_read_ready: nil)
       another_fake_server = double(to_io: another_tcp_server, new_connection: nil)
 
@@ -39,17 +46,11 @@ module AsyncIO
 
       event_loop.tick
 
-      expect(fake_server).to have_received(:connection_read_ready).at_least(:once)
-      expect(another_fake_server).to have_received(:new_connection).at_least(:once)
-
-      tcp_server.close
-      another_tcp_server.close
+      expect(fake_server).to have_received(:connection_read_ready).once.with(fake_server)
+      expect(another_fake_server).to have_received(:new_connection).once.with(another_fake_server)
     end
 
     it 'allows a single object to register reads on multiple io objects' do
-      tcp_server = TCPServer.new('localhost', 9595)
-      another_tcp_server = TCPServer.new('localhost', 9494)
-
       manager = double(connection_read_ready: nil, another_connection: nil)
 
       event_loop.register_read(tcp_server, &manager.method(:connection_read_ready))
@@ -62,14 +63,9 @@ module AsyncIO
       expect(manager).to receive(:another_connection).once.with(another_tcp_server)
 
       event_loop.tick
-
-      tcp_server.close
-      another_tcp_server.close
     end
 
     it 'allows to register multiple read handlers on a single io object' do
-      tcp_server = TCPServer.new('localhost', 9595)
-
       manager = double(connection_read_ready: nil)
       another_manager = double(new_connection: nil)
 
@@ -82,13 +78,9 @@ module AsyncIO
       expect(another_manager).to receive(:new_connection).once.with(tcp_server)
 
       event_loop.tick
-
-      tcp_server.close
     end
 
     it 'allows to deregister read handlers' do
-      tcp_server = TCPServer.new('localhost', 9595)
-
       manager = double(connection_read_ready: nil)
 
       event_loop.register_read(tcp_server, &manager.method(:connection_read_ready))
@@ -99,8 +91,6 @@ module AsyncIO
       expect(manager).not_to receive(:new_connection)
 
       event_loop.tick
-
-      tcp_server.close
     end
   end
 end
