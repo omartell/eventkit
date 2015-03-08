@@ -50,8 +50,7 @@ module AsyncIO
       tcp_server = TCPServer.new('localhost', 9595)
       another_tcp_server = TCPServer.new('localhost', 9494)
 
-      manager = double(connection_read_ready: nil,
-                       another_connection: nil)
+      manager = double(connection_read_ready: nil, another_connection: nil)
 
       event_loop.register_read(tcp_server, &manager.method(:connection_read_ready))
       event_loop.register_read(another_tcp_server, &manager.method(:another_connection))
@@ -81,6 +80,23 @@ module AsyncIO
 
       expect(manager).to receive(:connection_read_ready).once.with(tcp_server)
       expect(another_manager).to receive(:new_connection).once.with(tcp_server)
+
+      event_loop.tick
+
+      tcp_server.close
+    end
+
+    it 'allows to deregister read handlers' do
+      tcp_server = TCPServer.new('localhost', 9595)
+
+      manager = double(connection_read_ready: nil)
+
+      event_loop.register_read(tcp_server, &manager.method(:connection_read_ready))
+      event_loop.deregister_read(tcp_server, &manager.method(:connection_read_ready))
+
+      TCPSocket.new('localhost', 9595)
+
+      expect(manager).not_to receive(:new_connection)
 
       event_loop.tick
 

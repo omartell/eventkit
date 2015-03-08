@@ -16,5 +16,9 @@ module AsyncIO
     def register_read(io, &read_listener)
       @reading[io] += [read_listener]
     end
+
+    def deregister_read(io, &read_listener)
+      @reading[io] -= [read_listener]
+    end
   end
 end
