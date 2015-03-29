@@ -1,4 +1,5 @@
 module AsyncIO
+  class EventLoopAlreadyStartedError < StandardError;end
   class EventLoop
     attr_reader :interval
     private :interval
@@ -6,11 +7,18 @@ module AsyncIO
     def initialize(config = {})
       @read_handlers = Hash.new { |h, k| h[k] = [] }
       @write_handlers = Hash.new { |h, k| h[k] = [] }
-      @stopped  = false
+      @stopped = false
+      @started = false
       @interval = config.fetch(:interval_in_seconds, 1/100_000)
     end
 
-    def start
+    def start(&block)
+      if @started
+        fail EventLoopAlreadyStartedError, 'This event loop instance has already started running'
+      else
+        @started = true
+      end
+
       loop do
         break if stopped?
         tick
@@ -19,6 +27,7 @@ module AsyncIO
 
     def stop
       @stopped = true
+      @started = false
     end
 
     def stopped?

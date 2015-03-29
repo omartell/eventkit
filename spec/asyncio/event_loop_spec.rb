@@ -40,6 +40,35 @@ module AsyncIO
       end
     end
 
+    it 'does not allow to start the event loop twice' do
+      expect do
+        listener = double(:listener)
+
+        allow(listener).to receive(:handle_event) do |_io|
+          event_loop.start
+        end
+
+        event_loop.register_write(tcp_socket, &listener.method(:handle_event))
+
+        event_loop.start
+      end.to raise_error(EventLoopAlreadyStartedError)
+    end
+
+    it 'allows to restart the event loop' do
+      expect do
+        listener = double(:listener)
+
+        allow(listener).to receive(:handle_event) do |_io|
+          event_loop.stop
+          event_loop.start
+        end
+
+        event_loop.register_write(tcp_socket, &listener.method(:handle_event))
+
+        event_loop.start
+      end.not_to raise_error
+    end
+
     it 'notifies when a single read operation is ready' do
       fake_server = double(to_io: tcp_server, connection_read_ready: nil)
 
