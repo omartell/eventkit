@@ -36,15 +36,19 @@ module AsyncIO
       @reading[io] += [read_listener]
     end
 
-    def deregister_read(io, &read_listener)
-      @reading[io] -= [read_listener]
+    def deregister_read(io, read_listener = nil)
+      if read_listener
+        @reading[io] -= [read_listener]
+      else
+        @reading[io] = []
+      end
     end
 
     def register_write(io, &write_listener)
       @writing[io] += [write_listener]
     end
 
-    def deregister_write(io, write_listener)
+    def deregister_write(io, write_listener = nil)
       if write_listener
         @writing[io] -= [write_listener]
       else

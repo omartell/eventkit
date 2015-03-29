@@ -86,7 +86,7 @@ module AsyncIO
       expect(another_fake_server).to have_received(:new_connection).once.with(another_fake_server)
     end
 
-    it 'allows a single object to register reads on multiple io objects' do
+    it 'allows an object to register reads on multiple io objects' do
       listener = double(connection_read_ready: nil, another_connection: nil)
 
       event_loop.register_read(tcp_server, &listener.method(:connection_read_ready))
@@ -98,7 +98,7 @@ module AsyncIO
       event_loop.tick
     end
 
-    it 'allows a single object to register writes on multiple io objects' do
+    it 'allows an object to register writes on multiple io objects' do
       listener = double(one_ready_to_write: nil, another_ready_to_write: nil)
 
       event_loop.register_write(tcp_socket, &listener.method(:one_ready_to_write))
@@ -161,19 +161,38 @@ module AsyncIO
       event_loop.tick
     end
 
-    it 'deregisters all handlers for an io object' do
-      listener = double(connection_write_ready: nil, another_event: nil)
+    it 'deregisters all write handlers for an io object' do
+      listener = double(connection_write_ready: nil, another_write_event: nil)
 
       first_handler = listener.method(:connection_write_ready).to_proc
-      second_handler = listener.method(:another_event).to_proc
+      second_handler = listener.method(:another_write_event).to_proc
 
       event_loop.register_write(tcp_socket, &first_handler)
       event_loop.register_write(tcp_socket, &second_handler)
 
-      event_loop.deregister_write(tcp_socket, first_handler)
-      event_loop.deregister_write(tcp_socket, second_handler)
+      event_loop.deregister_write(tcp_socket)
 
       expect(listener).not_to receive(:connection_write_ready)
+      expect(listener).not_to receive(:another_event)
+
+      event_loop.tick
+    end
+
+    it 'deregisters all read handlers for an io object' do
+      listener = double(connection_read_ready: nil, another_read_event: nil)
+
+      first_handler = listener.method(:connection_read_ready).to_proc
+      second_handler = listener.method(:another_read_event).to_proc
+
+      connection = tcp_server.accept
+      connection.write('hello world')
+
+      event_loop.register_read(tcp_socket, &first_handler)
+      event_loop.register_read(tcp_socket, &second_handler)
+
+      event_loop.deregister_read(tcp_socket)
+
+      expect(listener).not_to receive(:connection_read_ready)
       expect(listener).not_to receive(:another_event)
 
       event_loop.tick
