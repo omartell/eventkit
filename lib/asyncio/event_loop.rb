@@ -1,9 +1,13 @@
 module AsyncIO
   class EventLoop
-    def initialize
-      @reading = Hash.new { |h, k| h[k] = [] }
-      @writing = Hash.new { |h, k| h[k] = [] }
-      @stopped = false
+    attr_reader :interval
+    private :interval
+
+    def initialize(config = {})
+      @read_handlers = Hash.new { |h, k| h[k] = [] }
+      @write_handlers = Hash.new { |h, k| h[k] = [] }
+      @stopped  = false
+      @interval = config.fetch(:interval_in_seconds, 1/100_000)
     end
 
     def start
@@ -22,37 +26,37 @@ module AsyncIO
     end
 
     def tick
-      ready_read, ready_write, _ = IO.select(@reading.keys, @writing.keys, [], 1)
+      ready_read, ready_write, _ = IO.select(@read_handlers.keys, @write_handlers.keys, [], interval)
       ready_read.each do |io|
-        @reading[io].each{ |handler| handler.call(io) }
+        @read_handlers[io].each{ |handler| handler.call(io) }
       end if ready_read
 
       ready_write.each do |io|
-         @writing[io].each{ |handler| handler.call(io) }
+         @write_handlers[io].each{ |handler| handler.call(io) }
       end if ready_write
     end
 
     def register_read(io, &read_listener)
-      @reading[io] += [read_listener]
+      @read_handlers[io] += [read_listener]
     end
 
     def deregister_read(io, read_listener = nil)
       if read_listener
-        @reading[io] -= [read_listener]
+        @read_handlers[io] -= [read_listener]
       else
-        @reading[io] = []
+        @read_handlers[io] = []
       end
     end
 
     def register_write(io, &write_listener)
-      @writing[io] += [write_listener]
+      @write_handlers[io] += [write_listener]
     end
 
     def deregister_write(io, write_listener = nil)
       if write_listener
-        @writing[io] -= [write_listener]
+        @write_handlers[io] -= [write_listener]
       else
-        @writing[io] = []
+        @write_handlers[io] = []
       end
     end
   end

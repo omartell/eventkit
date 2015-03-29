@@ -7,7 +7,7 @@ module AsyncIO
   RSpec.describe EventLoop do
     include AsyncHelper
 
-    let!(:event_loop) { EventLoop.new }
+    let!(:event_loop) { EventLoop.new(interval_in_seconds: 1/100_000) }
 
     let!(:tcp_server) { TCPServer.new('localhost', 9595) }
 
@@ -24,7 +24,7 @@ module AsyncIO
       another_tcp_socket.close
     end
 
-     it 'allows to start and stop the event loop' do
+    it 'allows to start and stop the event loop' do
       listener = double(handle_event: nil)
 
       handler = listener.method(:handle_event).to_proc
