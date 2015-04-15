@@ -40,7 +40,7 @@ module AsyncIO
       end
     end
 
-    it 'does not allow to start the event loop twice' do
+    it 'does not allow to start the event loop once it has started' do
       expect do
         listener = double(:listener)
 
@@ -225,6 +225,43 @@ module AsyncIO
       expect(listener).not_to receive(:another_event)
 
       event_loop.tick
+    end
+
+    it 'allows to register timers which will executed in order' do
+      listener = double(timer_expired_a: nil,
+                        timer_expired_b: nil,
+                        timer_expired_c: nil,
+                        timer_expired_d: nil)
+
+      event_loop.register_timer(run_in: 2, &listener.method(:timer_expired_a))
+
+      event_loop.register_timer(run_in: 3, &listener.method(:timer_expired_b))
+
+      event_loop.register_timer(run_in: 1, &listener.method(:timer_expired_c))
+
+      event_loop.register_timer(run_in: 5, &listener.method(:timer_expired_d))
+
+      sleep(3.1)
+
+      event_loop.tick
+
+      expect(listener).to have_received(:timer_expired_c).ordered.once
+      expect(listener).to have_received(:timer_expired_a).ordered.once
+      expect(listener).to have_received(:timer_expired_b).ordered.once
+      expect(listener).to_not have_received(:timer_expired_d)
+    end
+
+    it 'deregister timers as soon as they have expired' do
+      listener = double(timer_expired: nil)
+
+      event_loop.register_timer(run_in: 1, &listener.method(:timer_expired))
+
+      sleep(2)
+
+      event_loop.tick
+      event_loop.tick
+
+      expect(listener).to have_received(:timer_expired).once
     end
   end
 end
