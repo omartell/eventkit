@@ -7,7 +7,7 @@ module AsyncIO
   RSpec.describe EventLoop do
     include AsyncHelper
 
-    let!(:event_loop) { EventLoop.new(interval_in_seconds: 1/100_000) }
+    let!(:event_loop) { EventLoop.new(select_interval: 1/100_000) }
 
     let!(:tcp_server) { TCPServer.new('localhost', 9595) }
 
@@ -262,6 +262,16 @@ module AsyncIO
       event_loop.tick
 
       expect(listener).to have_received(:timer_expired).once
+    end
+
+    it 'allows to schedule code to be run before the next tick' do
+      listener = double(on_next_tick: nil)
+
+      event_loop.on_next_tick(&listener.method(:on_next_tick))
+
+      event_loop.tick
+
+      expect(listener).to have_received(:on_next_tick).once
     end
   end
 end
