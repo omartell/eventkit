@@ -1,9 +1,9 @@
 require 'spec_helper'
 require 'support/async_helper'
 require 'socket'
-require 'asyncio'
+require 'eventkit'
 
-module AsyncIO
+module Eventkit
   RSpec.describe EventLoop do
     include AsyncHelper
 
@@ -264,7 +264,7 @@ module AsyncIO
       expect(listener).to have_received(:timer_expired).once
     end
 
-    it 'allows to schedule code to be run before the next tick' do
+    it 'allows to schedule code to be run on the next tick' do
       listener = double(on_next_tick: nil)
 
       event_loop.on_next_tick(&listener.method(:on_next_tick))

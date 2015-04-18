@@ -1,7 +1,7 @@
 require 'set'
-require 'asyncio/timer'
+require 'eventkit/timer'
 
-module AsyncIO
+module Eventkit
   class EventLoopAlreadyStartedError < StandardError; end
 
   class EventLoop

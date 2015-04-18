@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'asyncio/version'
+require 'eventkit/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "asyncio"
-  spec.version       = AsyncIO::VERSION
+  spec.name          = "eventkit"
+  spec.version       = Eventkit::VERSION
   spec.authors       = ["Oliver Martell"]
   spec.email         = ["oliver.martell@gmail.com"]
   spec.summary       = "An Event Loop Implementation"

@@ -1,4 +1,4 @@
-module AsyncIO
+module Eventkit
   Timer = Struct.new(:expires_in, :handler) do
     def initialize(seconds, handler)
       super(Time.now.to_f + seconds, handler)
