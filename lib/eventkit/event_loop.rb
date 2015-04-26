@@ -11,13 +11,13 @@ module Eventkit
     def initialize(config = {})
       @read_handlers = Hash.new { |h, k| h[k] = [] }
       @write_handlers = Hash.new { |h, k| h[k] = [] }
-      @select_interval = config.fetch(:select_interval, 1/100_000)
+      @select_interval = config.fetch(:select_interval, 1 / 100_000)
       @timers = SortedSet.new
       @stopped = false
       @started = false
     end
 
-    def start(&block)
+    def start(&_block)
       if @started
         fail EventLoopAlreadyStartedError, 'This event loop instance has already started running'
       else
@@ -46,7 +46,7 @@ module Eventkit
       end if ready_read
 
       ready_write.each do |io|
-         @write_handlers.fetch(io).each { |handler| handler.call(io) }
+        @write_handlers.fetch(io).each { |handler| handler.call(io) }
       end if ready_write
 
       @timers.each { |timer| timer.handler.call if timer.expired? }
@@ -58,7 +58,7 @@ module Eventkit
       register_timer(run_in: 0, &handler)
     end
 
-    def register_timer(run_in: , &handler)
+    def register_timer(run_in:, &handler)
       @timers << Timer.new(run_in, handler)
     end
 

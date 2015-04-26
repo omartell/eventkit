@@ -1,5 +1,4 @@
 module AsyncHelper
-
   # Instead of waiting an specific an amount of time and then
   # asserting for a certain behaviour, this test helper polls for an assertion
   # success every X number of seconds (configurable as interval).
@@ -19,9 +18,7 @@ module AsyncHelper
 
       return if error.nil?
 
-      if Time.now >= time_limit
-        raise error
-      end
+      fail error if Time.now >= time_limit
       sleep interval
     end
   end
@@ -34,7 +31,7 @@ module AsyncHelper
 
   # Small wrapper around sleep
   def on_timeout(options = {})
-    timeout = options[:timeout]   || 0.5
+    timeout = options[:timeout] || 0.5
 
     sleep timeout
 

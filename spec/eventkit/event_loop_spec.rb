@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'support/async_helper'
 require 'socket'
 require 'eventkit'
@@ -7,7 +6,7 @@ module Eventkit
   RSpec.describe EventLoop do
     include AsyncHelper
 
-    let!(:event_loop) { EventLoop.new(select_interval: 1/100_000) }
+    let!(:event_loop) { EventLoop.new(select_interval: 1 / 100_000) }
 
     let!(:tcp_server) { TCPServer.new('localhost', 9595) }
 
