@@ -9,8 +9,29 @@ module Eventkit
     end
 
     def then(on_fullfiled: nil, on_rejected: nil)
-      self.on_fullfiled(&on_fullfiled) if on_fullfiled
-      self.on_rejected(&on_rejected) if on_rejected
+      promise = Promise.new
+
+      self.on_fullfiled do |value|
+        begin
+          promise.resolve(on_fullfiled.to_proc.call(value))
+        rescue => error
+          promise.reject(error)
+        end
+      end if on_fullfiled
+
+      self.on_rejected do |reason|
+        begin
+          promise.resolve(on_rejected.to_proc.call(reason))
+        rescue => error
+          promise.reject(error)
+        end
+      end if on_rejected
+
+      promise
+    end
+
+    def rejected?
+      @state == :rejected
     end
 
     def resolve(value)
@@ -25,15 +46,15 @@ module Eventkit
       end
     end
 
-    def reject(value)
+    def reject(reason)
       return unless @state == :pending
-      @reason = value
-      deliver_rejected(value)
+      @reason = reason
+      deliver_rejected(reason)
       @state = :rejected
     end
 
     def on_fullfiled(&handler)
-      fail ArgumentError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
+      fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
 
       if @state == :resolved
         handler.call(value)
@@ -43,7 +64,7 @@ module Eventkit
     end
 
     def on_rejected(&handler)
-      fail ArgumentError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
+      fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
 
       if @state == :rejected
         handler.call(reason)
@@ -58,8 +79,9 @@ module Eventkit
       @on_fullfiled.each { |handler| handler.call(value) }
     end
 
-    def deliver_rejected(value)
-      @on_rejected.each { |handler| handler.call(value) }
+    def deliver_rejected(reason)
+      @on_rejected.each { |handler| handler.call(reason) }
     end
   end
 end
+

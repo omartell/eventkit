@@ -24,9 +24,9 @@ module Eventkit
     end
 
     it 'allows to start and stop the event loop' do
-      listener = double(handle_event: nil)
+      listener = double(ready_to_write: nil)
 
-      handler = listener.method(:handle_event).to_proc
+      handler = listener.method(:ready_to_write).to_proc
 
       event_loop.register_write(tcp_socket, &handler)
 
@@ -35,7 +35,7 @@ module Eventkit
       event_loop.start
 
       eventually do
-        expect(listener).to have_received(:handle_event).once
+        expect(listener).to have_received(:ready_to_write)
       end
     end
 

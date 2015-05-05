@@ -61,7 +61,6 @@ module Eventkit
 
       it 'executes on rejected handlers in the same order as the originating calls' do
         promise  = Promise.new
-
         expect do |block|
           promise.on_rejected { block.to_proc.call(1) }
           promise.on_rejected { block.to_proc.call(2) }
@@ -70,7 +69,7 @@ module Eventkit
         end.to yield_successive_args(1, 2, 3)
       end
 
-      it 'executes on rejected handlers after resolved' do
+      it 'executes on rejected handlers even when it has been already rejected' do
         promise = Promise.new
         expect do |block|
           promise.reject(:error)
@@ -116,14 +115,14 @@ module Eventkit
     describe '#on_fullfiled' do
       it 'throws an error when called with a non callable object' do
         promise = Promise.new
-        expect { promise.on_fullfiled }.to raise_error(ArgumentError)
+        expect { promise.on_fullfiled }.to raise_error(TypeError)
       end
     end
 
     describe '#on_rejected' do
       it 'throws an error when called with a non callable object' do
         promise = Promise.new
-        expect { promise.on_fullfiled }.to raise_error(ArgumentError)
+        expect { promise.on_fullfiled }.to raise_error(TypeError)
       end
     end
 
@@ -173,10 +172,74 @@ module Eventkit
           promise_a.resolve(promise_b)
           promise_b.reject(:foobar)
         end.to yield_with_args(:foobar)
+      end
 
-        promise_a = Promise.new
-        promise_b = Promise.new
+      it 'passes over the value from on fullfiled to the returned promise' do
+        promise = Promise.new
+
+        expect do |block|
+          promise
+          .then(on_fullfiled: -> (value) {
+                  block.to_proc.call(value + 1)
+                  value + 1
+                })
+          .then(on_fullfiled: -> (value) {
+                  block.to_proc.call(value + 5)
+                  value + 5
+                })
+          .then(on_fullfiled: -> (value) {
+                  block.to_proc.call(value + 10)
+                  value + 10
+                })
+          promise.resolve(1)
+        end.to yield_successive_args(2, 7, 17)
+      end
+
+      it 'passes over the value from on rejected to the returned promise' do
+        promise = Promise.new
+
+        expect do |block|
+          promise
+          .then(on_rejected: -> (reason) {
+                  block.to_proc.call('bar')
+                  'bar'
+                })
+          .then(on_fullfiled: -> (reason) {
+                  block.to_proc.call('baz')
+                  'baz'
+                })
+          .then(on_fullfiled: -> (reason) {
+                  block.to_proc.call('zoo')
+                  'zoo'
+                })
+          promise.reject('foo')
+        end.to yield_successive_args('bar', 'baz', 'zoo')
+      end
+
+      it 'rejects the returned promise when on fullfiled throws an exception' do
+        promise = Promise.new
+
+        new_promise = promise.then(on_fullfiled: -> (value) { fail ArgumentError })
+
+        promise.resolve('foobar')
+
+        expect(new_promise).to be_rejected
+        expect(new_promise.reason).to be_an_instance_of(ArgumentError)
+      end
+
+      it 'rejects the returned promise when on rejected throws an exception' do
+        promise = Promise.new
+
+        new_promise = promise
+                      .then(on_fullfiled: -> (value) { fail ArgumentError })
+                      .then(on_rejected: -> (value) { fail NoMethodError })
+
+        promise.resolve('foobar')
+
+        expect(new_promise).to be_rejected
+        expect(new_promise.reason).to be_an_instance_of(NoMethodError)
       end
     end
   end
 end
+
