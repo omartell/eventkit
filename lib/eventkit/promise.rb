@@ -1,6 +1,7 @@
 module Eventkit
   class Promise
-    attr_reader :value, :reason
+    attr_reader :value
+    alias_method :reason, :value
 
     def initialize
       @on_fullfiled = []
@@ -8,24 +9,32 @@ module Eventkit
       @state = :pending
     end
 
-    def then(on_fullfiled: nil, on_rejected: nil)
+    def then(on_fullfiled_handler = nil, on_rejected_handler = nil)
       promise = Promise.new
 
-      self.on_fullfiled do |value|
+      self.on_fullfiled { |value|
         begin
-          promise.resolve(on_fullfiled.to_proc.call(value))
+          if on_fullfiled_handler
+            promise.resolve(on_fullfiled_handler.to_proc.call(value))
+          else
+            promise.resolve(value)
+          end
         rescue => error
           promise.reject(error)
         end
-      end if on_fullfiled
+      }
 
-      self.on_rejected do |reason|
+      self.on_rejected { |value|
         begin
-          promise.resolve(on_rejected.to_proc.call(reason))
+          if on_rejected_handler
+            promise.resolve(on_rejected_handler.to_proc.call(value))
+          else
+            promise.reject(value)
+          end
         rescue => error
           promise.reject(error)
         end
-      end if on_rejected
+      }
 
       promise
     end
@@ -38,18 +47,17 @@ module Eventkit
       return unless @state == :pending
       @value = value
       if value.respond_to?(:then)
-        value.then(on_fullfiled: ->(v) { deliver_resolved(v) },
-                   on_rejected:  ->(v) { deliver_rejected(v) })
+        value.then(->(v) { deliver_resolved(v) }, ->(v) { deliver_rejected(v) })
       else
         deliver_resolved(value)
         @state = :resolved
       end
     end
 
-    def reject(reason)
+    def reject(value)
       return unless @state == :pending
-      @reason = reason
-      deliver_rejected(reason)
+      @value = value
+      deliver_rejected(value)
       @state = :rejected
     end
 
@@ -67,7 +75,7 @@ module Eventkit
       fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
 
       if @state == :rejected
-        handler.call(reason)
+        handler.call(value)
       else
         @on_rejected << handler
       end
@@ -79,8 +87,8 @@ module Eventkit
       @on_fullfiled.each { |handler| handler.call(value) }
     end
 
-    def deliver_rejected(reason)
-      @on_rejected.each { |handler| handler.call(reason) }
+    def deliver_rejected(value)
+      @on_rejected.each { |handler| handler.call(value) }
     end
   end
 end

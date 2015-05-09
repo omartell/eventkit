@@ -130,7 +130,7 @@ module Eventkit
       it 'adds on fullfiled handlers' do
         promise = Promise.new
         expect do |block|
-          promise.then(on_fullfiled: block)
+          promise.then(block)
           promise.resolve(:foo)
         end.to yield_with_args(:foo)
       end
@@ -138,7 +138,7 @@ module Eventkit
       it 'adds on rejected handlers' do
         promise = Promise.new
         expect do |block|
-          promise.then(on_rejected: block)
+          promise.then(nil, block)
           promise.reject(:error)
         end.to yield_with_args(:error)
       end
@@ -146,8 +146,8 @@ module Eventkit
       it 'does not require both on fullfiled and on rejected handlers' do
         promise = Promise.new
         expect do |block|
-          promise.then(on_rejected: block)
-          promise.then(on_fullfiled: block)
+          promise.then(nil, block)
+          promise.then(block)
           promise.reject(:error)
         end.to yield_with_args(:error)
       end
@@ -179,15 +179,15 @@ module Eventkit
 
         expect do |block|
           promise
-          .then(on_fullfiled: -> (value) {
+          .then(-> (value) {
                   block.to_proc.call(value + 1)
                   value + 1
                 })
-          .then(on_fullfiled: -> (value) {
+          .then(-> (value) {
                   block.to_proc.call(value + 5)
                   value + 5
                 })
-          .then(on_fullfiled: -> (value) {
+          .then(-> (value) {
                   block.to_proc.call(value + 10)
                   value + 10
                 })
@@ -200,15 +200,15 @@ module Eventkit
 
         expect do |block|
           promise
-          .then(on_rejected: -> (reason) {
+          .then(nil, -> (reason) {
                   block.to_proc.call('bar')
                   'bar'
                 })
-          .then(on_fullfiled: -> (reason) {
+          .then(-> (reason) {
                   block.to_proc.call('baz')
                   'baz'
                 })
-          .then(on_fullfiled: -> (reason) {
+          .then(-> (reason) {
                   block.to_proc.call('zoo')
                   'zoo'
                 })
@@ -219,7 +219,7 @@ module Eventkit
       it 'rejects the returned promise when on fullfiled throws an exception' do
         promise = Promise.new
 
-        new_promise = promise.then(on_fullfiled: -> (value) { fail ArgumentError })
+        new_promise = promise.then(-> (value) { fail ArgumentError })
 
         promise.resolve('foobar')
 
@@ -231,13 +231,33 @@ module Eventkit
         promise = Promise.new
 
         new_promise = promise
-                      .then(on_fullfiled: -> (value) { fail ArgumentError })
-                      .then(on_rejected: -> (value) { fail NoMethodError })
+                      .then(-> (value) { fail ArgumentError })
+                      .then(nil, -> (value) { fail NoMethodError })
 
         promise.resolve('foobar')
 
         expect(new_promise).to be_rejected
         expect(new_promise.reason).to be_an_instance_of(NoMethodError)
+      end
+
+      it 'fullfills the returned promise with the same value when on fullfiled is not a function' do
+        promise = Promise.new
+
+        new_promise = promise.then(nil, -> { })
+
+        promise.resolve(:foo)
+
+        expect(new_promise.value).to eq(:foo)
+      end
+
+      it 'rejects the returned promise with the same reason when on rejected is not a function' do
+        promise = Promise.new
+
+        new_promise = promise.then(-> { }, nil)
+
+        promise.reject(:error)
+
+        expect(new_promise.reason).to eq(:error)
       end
     end
   end
