@@ -9,6 +9,18 @@ module Eventkit
       @state = :pending
     end
 
+    def pending?
+      @state == :pending
+    end
+
+    def resolved?
+      @state == :resolved
+    end
+
+    def rejected?
+      @state == :rejected
+    end
+
     def then(on_fullfiled_handler = nil, on_rejected_handler = nil)
       promise = Promise.new
 
@@ -39,12 +51,9 @@ module Eventkit
       promise
     end
 
-    def rejected?
-      @state == :rejected
-    end
-
     def resolve(value)
-      return unless @state == :pending
+      return unless pending?
+
       @value = value
       if value.respond_to?(:then)
         value.then(->(v) { deliver_resolved(v) }, ->(v) { deliver_rejected(v) })
@@ -55,7 +64,8 @@ module Eventkit
     end
 
     def reject(value)
-      return unless @state == :pending
+      return unless pending?
+
       @value = value
       deliver_rejected(value)
       @state = :rejected
@@ -64,7 +74,7 @@ module Eventkit
     def on_fullfiled(&handler)
       fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
 
-      if @state == :resolved
+      if resolved?
         handler.call(value)
       else
         @on_fullfiled << handler
@@ -74,7 +84,7 @@ module Eventkit
     def on_rejected(&handler)
       fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
 
-      if @state == :rejected
+      if rejected?
         handler.call(value)
       else
         @on_rejected << handler

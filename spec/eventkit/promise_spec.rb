@@ -2,9 +2,10 @@ require 'eventkit'
 
 module Eventkit
   RSpec.describe Promise do
+    let(:promise) { Promise.new }
+
     describe 'is in a pending, fullfiled or rejected state' do
       it 'executes on fullfiled handlers when resolved' do
-        promise = Promise.new
         expect do |block|
           promise.on_fullfiled(&block)
           promise.on_fullfiled(&block)
@@ -14,7 +15,6 @@ module Eventkit
       end
 
       it 'executes on fullfiled handlers after resolved' do
-        promise = Promise.new
         expect do |block|
           promise.resolve(:foo)
           promise.on_fullfiled(&block)
@@ -22,7 +22,6 @@ module Eventkit
       end
 
       it 'only executes on fullfiled handlers once even if resolved multiple times' do
-        promise = Promise.new
         expect do |block|
           promise.on_fullfiled(&block)
           promise.resolve(:foo)
@@ -31,7 +30,6 @@ module Eventkit
       end
 
       it 'executes on fullfiled handlers in the same order as the originating calls' do
-        promise = Promise.new
         expect do |block|
           promise.on_fullfiled { block.to_proc.call(1) }
           promise.on_fullfiled { block.to_proc.call(2) }
@@ -41,7 +39,6 @@ module Eventkit
       end
 
       it 'executes on rejected handlers when rejected' do
-        promise = Promise.new
         expect do |block|
           promise.on_rejected(&block)
           promise.on_rejected(&block)
@@ -51,7 +48,6 @@ module Eventkit
       end
 
       it 'only executes on rejected handlers once event if rejected multiple times' do
-        promise = Promise.new
         expect do |block|
           promise.on_rejected(&block)
           promise.reject(:error)
@@ -60,7 +56,6 @@ module Eventkit
       end
 
       it 'executes on rejected handlers in the same order as the originating calls' do
-        promise  = Promise.new
         expect do |block|
           promise.on_rejected { block.to_proc.call(1) }
           promise.on_rejected { block.to_proc.call(2) }
@@ -70,7 +65,6 @@ module Eventkit
       end
 
       it 'executes on rejected handlers even when it has been already rejected' do
-        promise = Promise.new
         expect do |block|
           promise.reject(:error)
           promise.on_rejected(&block)
@@ -78,21 +72,18 @@ module Eventkit
       end
 
       it 'does not execute on fullfiled handlers if it has not been fullfiled' do
-        promise = Promise.new
         expect do |block|
           promise.on_fullfiled(&block)
         end.to_not yield_with_args(:error)
       end
 
       it 'does not execute on rejected handlers if it has not been rejected' do
-        promise = Promise.new
         expect do |block|
           promise.on_rejected(&block)
         end.to_not yield_with_args(:error)
       end
 
       it 'can not be rejected once it has been fulfilled' do
-        promise = Promise.new
         expect do |block|
           promise.on_fullfiled(&block)
           promise.resolve(:foo)
@@ -102,7 +93,6 @@ module Eventkit
       end
 
       it 'can not be fullfiled once it has been rejected' do
-        promise = Promise.new
         expect do |block|
           promise.on_rejected(&block)
           promise.on_fullfiled(&block)
@@ -114,21 +104,18 @@ module Eventkit
 
     describe '#on_fullfiled' do
       it 'throws an error when called with a non callable object' do
-        promise = Promise.new
         expect { promise.on_fullfiled }.to raise_error(TypeError)
       end
     end
 
     describe '#on_rejected' do
       it 'throws an error when called with a non callable object' do
-        promise = Promise.new
         expect { promise.on_fullfiled }.to raise_error(TypeError)
       end
     end
 
     describe '#then' do
       it 'adds on fullfiled handlers' do
-        promise = Promise.new
         expect do |block|
           promise.then(block)
           promise.resolve(:foo)
@@ -136,7 +123,6 @@ module Eventkit
       end
 
       it 'adds on rejected handlers' do
-        promise = Promise.new
         expect do |block|
           promise.then(nil, block)
           promise.reject(:error)
@@ -144,7 +130,6 @@ module Eventkit
       end
 
       it 'does not require both on fullfiled and on rejected handlers' do
-        promise = Promise.new
         expect do |block|
           promise.then(nil, block)
           promise.then(block)
@@ -175,8 +160,6 @@ module Eventkit
       end
 
       it 'passes over the value from on fullfiled to the returned promise' do
-        promise = Promise.new
-
         expect do |block|
           promise
           .then(-> (value) {
@@ -196,8 +179,6 @@ module Eventkit
       end
 
       it 'passes over the value from on rejected to the returned promise' do
-        promise = Promise.new
-
         expect do |block|
           promise
           .then(nil, -> (reason) {
@@ -217,8 +198,6 @@ module Eventkit
       end
 
       it 'rejects the returned promise when on fullfiled throws an exception' do
-        promise = Promise.new
-
         new_promise = promise.then(-> (value) { fail ArgumentError })
 
         promise.resolve('foobar')
@@ -228,8 +207,6 @@ module Eventkit
       end
 
       it 'rejects the returned promise when on rejected throws an exception' do
-        promise = Promise.new
-
         new_promise = promise
                       .then(-> (value) { fail ArgumentError })
                       .then(nil, -> (value) { fail NoMethodError })
@@ -241,8 +218,6 @@ module Eventkit
       end
 
       it 'fullfills the returned promise with the same value when on fullfiled is not a function' do
-        promise = Promise.new
-
         new_promise = promise.then(nil, -> { })
 
         promise.resolve(:foo)
@@ -251,8 +226,6 @@ module Eventkit
       end
 
       it 'rejects the returned promise with the same reason when on rejected is not a function' do
-        promise = Promise.new
-
         new_promise = promise.then(-> { }, nil)
 
         promise.reject(:error)
