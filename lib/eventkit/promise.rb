@@ -7,6 +7,7 @@ module Eventkit
       @on_fullfiled = []
       @on_rejected  = []
       @state = :pending
+      @resolved_with_promise = false
     end
 
     def pending?
@@ -24,7 +25,7 @@ module Eventkit
     def then(on_fullfiled_handler = nil, on_rejected_handler = nil)
       promise = Promise.new
 
-      self.on_fullfiled { |value|
+      on_fullfiled { |value|
         begin
           if on_fullfiled_handler
             promise.resolve(on_fullfiled_handler.to_proc.call(value))
@@ -36,7 +37,7 @@ module Eventkit
         end
       }
 
-      self.on_rejected { |value|
+      on_rejected { |value|
         begin
           if on_rejected_handler
             promise.resolve(on_rejected_handler.to_proc.call(value))
@@ -52,23 +53,17 @@ module Eventkit
     end
 
     def resolve(value)
-      return unless pending?
+      fail TypeError, 'Promised resolved with itself' if self == value
 
-      @value = value
-      if value.respond_to?(:then)
-        value.then(->(v) { deliver_resolved(v) }, ->(v) { deliver_rejected(v) })
-      else
-        deliver_resolved(value)
-        @state = :resolved
-      end
+      return unless pending? && !@resolved_with_promise
+
+      run_resolution(value)
     end
 
     def reject(value)
-      return unless pending?
+      return unless pending? && !@resolved_with_promise
 
-      @value = value
-      deliver_rejected(value)
-      @state = :rejected
+      run_rejection(value)
     end
 
     def on_fullfiled(&handler)
@@ -93,12 +88,26 @@ module Eventkit
 
     private
 
-    def deliver_resolved(value)
-      @on_fullfiled.each { |handler| handler.call(value) }
+    def run_resolution(value)
+      if value.respond_to?(:then)
+        begin
+          value.then(->(v) { run_resolution(v) },
+                     ->(v) { run_rejection(v) })
+          @resolved_with_promise = true
+        rescue => e
+          reject(e)
+        end
+      else
+        @state = :resolved
+        @value = value
+        @on_fullfiled.each { |handler| handler.call(value) }
+      end
     end
 
-    def deliver_rejected(value)
+    def run_rejection(value)
+      @value = value
       @on_rejected.each { |handler| handler.call(value) }
+      @state = :rejected
     end
   end
 end
