@@ -74,6 +74,10 @@ module Eventkit
       self.then(nil, handler)
     end
 
+    def catch(&handler)
+      self.then(nil, handler)
+    end
+
     private
 
     def add_on_fullfiled(&handler)
