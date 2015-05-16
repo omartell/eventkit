@@ -109,14 +109,38 @@ module Eventkit
     end
 
     describe '#on_fullfiled' do
-      it 'throws a TypeError when called with a non callable object' do
-        expect { promise.on_fullfiled }.to raise_error(TypeError)
+      it 'returns a new promise' do
+        expect  { |block|
+          promise_b = promise.on_fullfiled { |value|
+            block.to_proc.call(value + 1)
+            value + 1
+          }
+
+          promise_b.on_fullfiled { |value|
+            block.to_proc.call(value + 5)
+            value + 5
+          }
+
+          promise.resolve(1)
+        }.to yield_successive_args(2, 7)
       end
     end
 
     describe '#on_rejected' do
-      it 'throws a TypeError when called with a non callable object' do
-        expect { promise.on_fullfiled }.to raise_error(TypeError)
+      it 'returns a new promise' do
+        expect  { |block|
+          promise_b = promise.on_rejected { |value|
+            block.to_proc.call(value + 1)
+            value + 1
+          }
+
+          promise_b.on_fullfiled { |value|
+            block.to_proc.call(value + 5)
+            value + 5
+          }
+
+          promise.reject(1)
+        }.to yield_successive_args(2, 7)
       end
     end
 
@@ -297,5 +321,4 @@ module Eventkit
     end
   end
 end
-
 

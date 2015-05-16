@@ -25,7 +25,7 @@ module Eventkit
     def then(on_fullfiled_handler = nil, on_rejected_handler = nil)
       promise = Promise.new
 
-      on_fullfiled { |value|
+      add_on_fullfiled { |value|
         begin
           if on_fullfiled_handler
             promise.resolve(on_fullfiled_handler.to_proc.call(value))
@@ -37,7 +37,7 @@ module Eventkit
         end
       }
 
-      on_rejected { |value|
+      add_on_rejected { |value|
         begin
           if on_rejected_handler
             promise.resolve(on_rejected_handler.to_proc.call(value))
@@ -67,8 +67,16 @@ module Eventkit
     end
 
     def on_fullfiled(&handler)
-      fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
+      self.then(handler)
+    end
 
+    def on_rejected(&handler)
+      self.then(nil, handler)
+    end
+
+    private
+
+    def add_on_fullfiled(&handler)
       if resolved?
         handler.call(value)
       else
@@ -76,17 +84,13 @@ module Eventkit
       end
     end
 
-    def on_rejected(&handler)
-      fail TypeError, 'Given handler does not respond to #call' unless handler.respond_to?(:call)
-
+    def add_on_rejected(&handler)
       if rejected?
         handler.call(value)
       else
         @on_rejected << handler
       end
     end
-
-    private
 
     def run_resolution(value)
       if value.respond_to?(:then)
