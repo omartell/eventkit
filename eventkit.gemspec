@@ -8,8 +8,10 @@ Gem::Specification.new do |spec|
   spec.version       = Eventkit::VERSION
   spec.authors       = ['Oliver Martell']
   spec.email         = ['oliver.martell@gmail.com']
-  spec.summary       = 'An Event Loop Implementation'
-  spec.description   = 'Read and write from IO objects using an event driven non blocking approach'
+  spec.summary       = 'Experimental toolkit for asynchronous event driven applications'
+  spec.description   =
+    'Experimental toolkit for asynchronous event driven applications, which includes
+an event loop to perform non blocking IO and a promises A+ implementation.'
   spec.homepage      = ''
   spec.license       = 'MIT'
 
