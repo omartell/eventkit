@@ -58,8 +58,8 @@ module Eventkit
       register_timer(run_in: 0, &handler)
     end
 
-    def register_timer(run_in:, &handler)
-      @timers << Timer.new(run_in, handler)
+    def register_timer(options, &handler)
+      @timers << Timer.new(options.fetch(:run_in), handler)
     end
 
     def register_read(io, &listener)
