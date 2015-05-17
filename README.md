@@ -1,5 +1,7 @@
 # Eventkit
 
+[![Build Status](https://travis-ci.org/omartell/eventkit.svg?branch=master)](https://travis-ci.org/omartell/eventkit)
+
 A basic toolkit for asynchronous event driven applications. The
 current version includes an Event Loop to perform non blocking IO and
 a promises A+ implementation to coordinate asychronous tasks.

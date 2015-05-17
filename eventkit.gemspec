@@ -9,10 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Oliver Martell']
   spec.email         = ['oliver.martell@gmail.com']
   spec.summary       = 'Experimental toolkit for asynchronous event driven applications'
-  spec.description   =
-    'Experimental toolkit for asynchronous event driven applications, which includes
-an event loop to perform non blocking IO and a promises A+ implementation.'
-  spec.homepage      = ''
+  spec.description   = 'An Event Loop, a Promises A+ library, and more...'
+  spec.homepage      = 'http://github.com/omartell/eventkit'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0")
