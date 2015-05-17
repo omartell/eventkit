@@ -24,19 +24,16 @@ module Eventkit
     end
 
     it 'allows to start and stop the event loop' do
-      listener = double(ready_to_write: nil)
+      verifier = double(did_stop: nil)
 
-      handler = listener.method(:ready_to_write).to_proc
-
-      event_loop.register_write(tcp_socket, &handler)
-
-      Thread.new { event_loop.stop }
+      event_loop.on_next_tick do
+        event_loop.stop
+        verifier.did_stop
+      end
 
       event_loop.start
 
-      eventually do
-        expect(listener).to have_received(:ready_to_write)
-      end
+      expect(verifier).to have_received(:did_stop)
     end
 
     it 'does not allow to start the event loop once it has started' do
