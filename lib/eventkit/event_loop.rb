@@ -41,16 +41,18 @@ module Eventkit
 
     def tick
       ready_read, ready_write, _ = IO.select(@read_handlers.keys, @write_handlers.keys, [], select_interval)
-      ready_read.each do |io|
+      ready_read.each { |io|
         @read_handlers.fetch(io).each { |handler| handler.call(io) }
-      end if ready_read
+      } if ready_read
 
-      ready_write.each do |io|
+      ready_write.each { |io|
         @write_handlers.fetch(io).each { |handler| handler.call(io) }
-      end if ready_write
+      } if ready_write
 
-      @timers.each { |timer| timer.handler.call if timer.expired? }
-      @timers = @timers.reject(&:expired?)
+      @timers.select(&:expired?).each { |timer|
+        timer.handler.call
+        @timers.delete(timer)
+      }
       nil
     end
 
