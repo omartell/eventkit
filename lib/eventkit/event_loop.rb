@@ -25,7 +25,10 @@ module Eventkit
       end
 
       loop do
-        break if stopped?
+        if stop_scheduled?
+          @stopped = false
+          break
+        end
         tick
       end
     end
@@ -35,7 +38,7 @@ module Eventkit
       @started = false
     end
 
-    def stopped?
+    def stop_scheduled?
       @stopped
     end
 
