@@ -51,18 +51,22 @@ module Eventkit
     end
 
     it 'allows to restart the event loop' do
-      expect do
-        listener = double(:listener)
-
-        allow(listener).to receive(:handle_event) do |_io|
+      expect do |block|
+        event_loop.register_write(tcp_socket) do |io|
+          block.to_proc.call(:once)
           event_loop.stop
+          event_loop.deregister_write(io)
+
+          event_loop.register_write(another_tcp_socket) do |io|
+            block.to_proc.call(:twice)
+            event_loop.stop
+            event_loop.deregister_write(io)
+          end
           event_loop.start
         end
 
-        event_loop.register_write(tcp_socket, &listener.method(:handle_event))
-
         event_loop.start
-      end.not_to raise_error
+      end.to yield_successive_args(:once, :twice)
     end
 
     it 'notifies when a single read operation is ready' do
