@@ -1,11 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'eventkit/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'eventkit'
-  spec.version       = Eventkit::VERSION
+  spec.version       = '1.0'
   spec.authors       = ['Oliver Martell']
   spec.email         = ['oliver.martell@gmail.com']
   spec.summary       = 'Experimental toolkit for asynchronous event driven applications'
@@ -23,5 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry', '~> 0.10.1'
   spec.add_development_dependency 'pry-doc', '~> 0.6.0'
   spec.add_development_dependency 'method_source', '~> 0.8.2'
-  spec.add_runtime_dependency 'eventkit-promise', '~> 0.1.0'
+
+  spec.add_runtime_dependency 'eventkit-promise', '~> 1.0'
+  spec.add_runtime_dependency 'eventkit-eventloop', '~> 0.1.0'
 end
